@@ -1,9 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import type { RegisterInput, LoginInput } from '../validators/authValidator';
-
-const prisma = new PrismaClient();
+import prisma from '../utils/prisma';
 
 export class AuthService {
   async register(data: RegisterInput) {
