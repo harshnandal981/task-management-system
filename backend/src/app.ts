@@ -1,9 +1,11 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
-import authRoutes from './routes/authRoutes';
 
-// Load environment variables
+// Load environment variables first before any other imports
 dotenv.config();
+
+import express, { Application, Request, Response, NextFunction } from 'express';
+import authRoutes from './routes/authRoutes';
+import taskRoutes from './routes/taskRoutes';
 
 // Initialize Express app
 const app: Application = express();
@@ -24,6 +26,9 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // Authentication routes
 app.use('/auth', authRoutes);
+
+// Task routes
+app.use('/tasks', taskRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
