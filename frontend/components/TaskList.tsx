@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Task } from "../lib/api";
 import { TaskCard } from "./TaskCard";
 
@@ -32,6 +33,11 @@ export function TaskList({
   statusFilter,
   searchQuery,
 }: TaskListProps) {
+  // Memoize pagination array to avoid recreating on every render
+  const paginationArray = useMemo(() => {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }, [totalPages]);
+
   return (
     <div className="space-y-4">
       {/* Filter and Search Controls */}
@@ -104,7 +110,7 @@ export function TaskList({
             Previous
           </button>
           <div className="flex gap-1">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+            {paginationArray.map((page) => {
               // Show first page, last page, current page, and one page before/after current
               if (
                 page === 1 ||

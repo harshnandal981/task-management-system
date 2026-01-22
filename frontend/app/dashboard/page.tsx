@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
@@ -8,7 +8,7 @@ import { ToastContainer, useToast } from "../../components/Toast";
 import { TaskList } from "../../components/TaskList";
 import { TaskForm } from "../../components/TaskForm";
 import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
-import { taskApi, Task } from "../../lib/api";
+import { taskApi, Task, GetTasksParams } from "../../lib/api";
 
 function DashboardContent() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -30,13 +30,13 @@ function DashboardContent() {
   const fetchTasks = useCallback(async () => {
     try {
       setIsLoading(true);
-      const params: any = {
+      const params: GetTasksParams = {
         page: currentPage,
         limit: 10,
       };
 
       if (statusFilter) {
-        params.status = statusFilter;
+        params.status = statusFilter as 'PENDING' | 'COMPLETED';
       }
 
       if (searchQuery.trim()) {
@@ -155,8 +155,8 @@ function DashboardContent() {
     setCurrentPage(1);
   };
 
-  const pendingCount = tasks.filter((t) => t.status === "PENDING").length;
-  const completedCount = tasks.filter((t) => t.status === "COMPLETED").length;
+  const pendingCount = useMemo(() => tasks.filter((t) => t.status === "PENDING").length, [tasks]);
+  const completedCount = useMemo(() => tasks.filter((t) => t.status === "COMPLETED").length, [tasks]);
 
   return (
     <>
