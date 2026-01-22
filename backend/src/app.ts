@@ -1,10 +1,11 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
+
+// Load environment variables first before any other imports
+dotenv.config();
+
+import express, { Application, Request, Response, NextFunction } from 'express';
 import authRoutes from './routes/authRoutes';
 import taskRoutes from './routes/taskRoutes';
-
-// Load environment variables
-dotenv.config();
 
 // Initialize Express app
 const app: Application = express();
