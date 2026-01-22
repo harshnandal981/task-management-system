@@ -1,21 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../context/AuthContext";
 import { ProtectedRoute } from "../../components/ProtectedRoute";
 import { ToastContainer, useToast } from "../../components/Toast";
+import { TaskList } from "../../components/TaskList";
+import { TaskForm } from "../../components/TaskForm";
+import { DeleteConfirmationModal } from "../../components/DeleteConfirmationModal";
+import { taskApi, Task } from "../../lib/api";
 
 function DashboardContent() {
-  const [tasks] = useState([
-    { id: 1, title: "Sample Task 1", status: "pending", priority: "high" },
-    { id: 2, title: "Sample Task 2", status: "in-progress", priority: "medium" },
-    { id: 3, title: "Sample Task 3", status: "completed", priority: "low" },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalTasks, setTotalTasks] = useState(0);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showTaskForm, setShowTaskForm] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const { user, logout } = useAuth();
   const router = useRouter();
   const { toasts, showToast, removeToast } = useToast();
+
+  const fetchTasks = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const params: any = {
+        page: currentPage,
+        limit: 10,
+      };
+
+      if (statusFilter) {
+        params.status = statusFilter;
+      }
+
+      if (searchQuery.trim()) {
+        params.search = searchQuery.trim();
+      }
+
+      const response = await taskApi.getTasks(params);
+      setTasks(response.data.tasks);
+      setTotalPages(response.data.pagination.totalPages);
+      setTotalTasks(response.data.pagination.total);
+    } catch (error: any) {
+      console.error('Error fetching tasks:', error);
+      showToast(error.response?.data?.message || "Failed to fetch tasks", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, statusFilter, searchQuery, showToast]);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   const handleLogout = async () => {
     try {
@@ -29,39 +71,130 @@ function DashboardContent() {
     }
   };
 
+  const handleAddTask = () => {
+    setEditingTask(null);
+    setShowTaskForm(true);
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setShowTaskForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowTaskForm(false);
+    setEditingTask(null);
+  };
+
+  const handleSubmitTask = async (data: { title: string; description?: string; status?: 'PENDING' | 'COMPLETED' }) => {
+    try {
+      if (editingTask) {
+        await taskApi.updateTask(editingTask.id, data);
+        showToast("Task updated successfully!", "success");
+      } else {
+        await taskApi.createTask(data);
+        showToast("Task created successfully!", "success");
+      }
+      await fetchTasks();
+      handleCloseForm();
+    } catch (error: any) {
+      console.error('Error submitting task:', error);
+      showToast(error.response?.data?.message || "Failed to save task", "error");
+      throw error;
+    }
+  };
+
+  const handleDeleteClick = (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    setTaskToDelete({ id, title: task?.title || 'this task' });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      await taskApi.deleteTask(taskToDelete.id);
+      showToast("Task deleted successfully!", "success");
+      setTaskToDelete(null);
+      await fetchTasks();
+    } catch (error: any) {
+      console.error('Error deleting task:', error);
+      showToast(error.response?.data?.message || "Failed to delete task", "error");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setTaskToDelete(null);
+  };
+
+  const handleToggleStatus = async (id: string) => {
+    try {
+      await taskApi.toggleTaskStatus(id);
+      showToast("Task status updated!", "success");
+      await fetchTasks();
+    } catch (error: any) {
+      console.error('Error toggling task status:', error);
+      showToast(error.response?.data?.message || "Failed to update task status", "error");
+    }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleFilterChange = (status: string) => {
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (search: string) => {
+    setSearchQuery(search);
+    setCurrentPage(1);
+  };
+
+  const pendingCount = tasks.filter((t) => t.status === "PENDING").length;
+  const completedCount = tasks.filter((t) => t.status === "COMPLETED").length;
+
   return (
     <>
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       <div>
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Task Dashboard</h1>
             <p className="text-gray-600">Welcome back, {user?.name || "User"}!</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-          >
-            Logout
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={handleAddTask}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              + Add Task
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Tasks</h3>
-            <p className="text-3xl font-bold text-blue-600">{tasks.length}</p>
+            <p className="text-3xl font-bold text-blue-600">{totalTasks}</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">In Progress</h3>
-            <p className="text-3xl font-bold text-yellow-600">
-              {tasks.filter((t) => t.status === "in-progress").length}
-            </p>
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Pending</h3>
+            <p className="text-3xl font-bold text-yellow-600">{pendingCount}</p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-700 mb-2">Completed</h3>
-            <p className="text-3xl font-bold text-green-600">
-              {tasks.filter((t) => t.status === "completed").length}
-            </p>
+            <p className="text-3xl font-bold text-green-600">{completedCount}</p>
           </div>
         </div>
 
@@ -70,31 +203,40 @@ function DashboardContent() {
             <h2 className="text-xl font-bold text-gray-900">Tasks</h2>
           </div>
           <div className="p-6">
-            <div className="space-y-4">
-              {tasks.map((task) => (
-                <div key={task.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{task.title}</h3>
-                      <div className="flex gap-2 mt-2">
-                        <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                          {task.status}
-                        </span>
-                        <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
-                          {task.priority}
-                        </span>
-                      </div>
-                    </div>
-                    <button className="text-blue-600 hover:text-blue-700 font-medium">
-                      View
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <TaskList
+              tasks={tasks}
+              isLoading={isLoading}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              onFilterChange={handleFilterChange}
+              onSearchChange={handleSearchChange}
+              onEdit={handleEditTask}
+              onDelete={handleDeleteClick}
+              onToggleStatus={handleToggleStatus}
+              statusFilter={statusFilter}
+              searchQuery={searchQuery}
+            />
           </div>
         </div>
       </div>
+
+      {showTaskForm && (
+        <TaskForm
+          task={editingTask}
+          onSubmit={handleSubmitTask}
+          onClose={handleCloseForm}
+          mode={editingTask ? 'edit' : 'add'}
+        />
+      )}
+
+      <DeleteConfirmationModal
+        isOpen={!!taskToDelete}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        taskTitle={taskToDelete?.title || ''}
+        isDeleting={isDeleting}
+      />
     </>
   );
 }

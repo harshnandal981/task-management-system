@@ -124,4 +124,88 @@ api.interceptors.response.use(
   }
 );
 
+// Task API methods
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: 'PENDING' | 'COMPLETED';
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetTasksParams {
+  page?: number;
+  limit?: number;
+  status?: 'PENDING' | 'COMPLETED';
+  search?: string;
+}
+
+export interface GetTasksResponse {
+  success: boolean;
+  message: string;
+  data: {
+    tasks: Task[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+}
+
+export interface TaskResponse {
+  success: boolean;
+  message: string;
+  data: Task;
+}
+
+export interface DeleteTaskResponse {
+  success: boolean;
+  message: string;
+}
+
+export const taskApi = {
+  // Get all tasks with pagination, filtering, and search
+  getTasks: async (params?: GetTasksParams): Promise<GetTasksResponse> => {
+    const response = await api.get('/tasks', { params });
+    return response.data;
+  },
+
+  // Get task by ID
+  getTaskById: async (id: string): Promise<TaskResponse> => {
+    const response = await api.get(`/tasks/${id}`);
+    return response.data;
+  },
+
+  // Create a new task
+  createTask: async (data: { title: string; description?: string }): Promise<TaskResponse> => {
+    const response = await api.post('/tasks', data);
+    return response.data;
+  },
+
+  // Update a task
+  updateTask: async (
+    id: string,
+    data: { title?: string; description?: string; status?: 'PENDING' | 'COMPLETED' }
+  ): Promise<TaskResponse> => {
+    const response = await api.patch(`/tasks/${id}`, data);
+    return response.data;
+  },
+
+  // Delete a task
+  deleteTask: async (id: string): Promise<DeleteTaskResponse> => {
+    const response = await api.delete(`/tasks/${id}`);
+    return response.data;
+  },
+
+  // Toggle task status between PENDING and COMPLETED
+  toggleTaskStatus: async (id: string): Promise<TaskResponse> => {
+    const response = await api.patch(`/tasks/${id}/toggle`);
+    return response.data;
+  },
+};
+
 export default api;
