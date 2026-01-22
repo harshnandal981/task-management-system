@@ -15,8 +15,14 @@ export const updateTaskSchema = z.object({
 });
 
 export const getTasksQuerySchema = z.object({
-  page: z.string().optional().default('1').transform(val => parseInt(val, 10)),
-  limit: z.string().optional().default('10').transform(val => parseInt(val, 10)),
+  page: z.string().optional().default('1').transform((val) => {
+    const parsed = parseInt(val, 10);
+    return isNaN(parsed) || parsed < 1 ? 1 : parsed;
+  }),
+  limit: z.string().optional().default('10').transform((val) => {
+    const parsed = parseInt(val, 10);
+    return isNaN(parsed) || parsed < 1 ? 10 : parsed;
+  }),
   status: taskStatusEnum.optional(),
   search: z.string().optional(),
 });
