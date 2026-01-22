@@ -351,8 +351,63 @@ The application now includes comprehensive task management functionality:
 - Server-side rendering with Next.js
 - Type-safe development with TypeScript
 
+## Deployment
+
+### Deploy to Vercel
+
+The frontend is configured for easy deployment to Vercel:
+
+1. **Quick Deploy** (Recommended for production):
+   - Connect your GitHub repository to Vercel
+   - Set the root directory to `frontend`
+   - Configure the `NEXT_PUBLIC_API_URL` environment variable
+   - Deploy with one click
+
+2. **Using Vercel CLI**:
+   ```bash
+   npm install -g vercel
+   cd frontend
+   vercel
+   ```
+
+3. **Configuration Files**:
+   - `vercel.json` - Vercel deployment configuration
+   - `.env.production` - Production environment template
+   - `DEPLOYMENT.md` - Comprehensive deployment guide
+
+### Environment Variables for Production
+
+Set the following environment variable in Vercel:
+
+```
+NEXT_PUBLIC_API_URL=https://your-backend-api.com
+```
+
+> **Important**: Replace `https://your-backend-api.com` with your actual backend API URL
+
+### Complete Deployment Guide
+
+For detailed deployment instructions, troubleshooting, and best practices, see:
+📖 **[DEPLOYMENT.md](./DEPLOYMENT.md)**
+
+This guide covers:
+- Step-by-step deployment instructions (Dashboard & CLI)
+- Environment variable configuration
+- Testing your deployment
+- Troubleshooting common issues
+- Performance optimization
+- Continuous deployment setup
+- Monitoring and analytics
+
+### Live Demo
+
+Once deployed, your application will be available at:
+- Vercel URL: `https://your-app.vercel.app`
+- Custom domain (optional): `https://your-domain.com`
+
 ## Learn More
 
 - [Next.js Documentation](https://nextjs.org/docs)
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Vercel Documentation](https://vercel.com/docs)
