@@ -10,6 +10,10 @@ A RESTful API for a Task Management System built with Express.js, TypeScript, Pr
 - Secure password hashing with bcrypt
 - Input validation using Zod
 - Authentication middleware for protected routes
+- Task management with CRUD operations
+- Task filtering by status
+- Task search by title
+- Pagination support
 - TypeScript for type safety
 
 ## Prerequisites
@@ -169,9 +173,219 @@ http://localhost:3000
 
 **Note:** In this JWT implementation, logout is handled client-side by removing the stored tokens.
 
+### Task Management Endpoints
+
+All task endpoints are protected and require authentication. Include the access token in the Authorization header:
+
+```
+Authorization: Bearer <access_token>
+```
+
+#### 1. Get All Tasks
+**Endpoint:** `GET /tasks`
+
+**Query Parameters:**
+- `page` (optional): Page number for pagination (default: 1)
+- `limit` (optional): Number of tasks per page (default: 10)
+- `status` (optional): Filter by status (`PENDING` or `COMPLETED`)
+- `search` (optional): Search by title (case insensitive)
+
+**Example Request:**
+```bash
+curl -H "Authorization: Bearer <access_token>" \
+  "http://localhost:3000/tasks?page=1&limit=10&status=PENDING&search=meeting"
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Tasks retrieved successfully",
+  "data": {
+    "tasks": [
+      {
+        "id": "uuid",
+        "title": "Complete project",
+        "description": "Finish the task management system",
+        "status": "PENDING",
+        "userId": "uuid",
+        "createdAt": "2024-01-01T00:00:00.000Z",
+        "updatedAt": "2024-01-01T00:00:00.000Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 1,
+      "totalPages": 1
+    }
+  }
+}
+```
+
+#### 2. Create New Task
+**Endpoint:** `POST /tasks`
+
+**Request Body:**
+```json
+{
+  "title": "Complete project",
+  "description": "Finish the task management system",
+  "status": "PENDING"
+}
+```
+
+**Note:** `description` and `status` are optional. Status defaults to `PENDING`.
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "message": "Task created successfully",
+  "data": {
+    "id": "uuid",
+    "title": "Complete project",
+    "description": "Finish the task management system",
+    "status": "PENDING",
+    "userId": "uuid",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- **400 Bad Request:** Validation error
+- **401 Unauthorized:** Invalid or missing token
+- **500 Internal Server Error:** Server error
+
+#### 3. Get Task by ID
+**Endpoint:** `GET /tasks/:id`
+
+**Example Request:**
+```bash
+curl -H "Authorization: Bearer <access_token>" \
+  http://localhost:3000/tasks/task-uuid
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Task retrieved successfully",
+  "data": {
+    "id": "uuid",
+    "title": "Complete project",
+    "description": "Finish the task management system",
+    "status": "PENDING",
+    "userId": "uuid",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- **400 Bad Request:** Invalid task ID
+- **401 Unauthorized:** Invalid or missing token
+- **404 Not Found:** Task not found
+- **500 Internal Server Error:** Server error
+
+#### 4. Update Task
+**Endpoint:** `PATCH /tasks/:id`
+
+**Request Body:** (All fields are optional)
+```json
+{
+  "title": "Updated title",
+  "description": "Updated description",
+  "status": "COMPLETED"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Task updated successfully",
+  "data": {
+    "id": "uuid",
+    "title": "Updated title",
+    "description": "Updated description",
+    "status": "COMPLETED",
+    "userId": "uuid",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T01:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- **400 Bad Request:** Validation error or invalid task ID
+- **401 Unauthorized:** Invalid or missing token
+- **404 Not Found:** Task not found
+- **500 Internal Server Error:** Server error
+
+#### 5. Delete Task
+**Endpoint:** `DELETE /tasks/:id`
+
+**Example Request:**
+```bash
+curl -X DELETE -H "Authorization: Bearer <access_token>" \
+  http://localhost:3000/tasks/task-uuid
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Task deleted successfully"
+}
+```
+
+**Error Responses:**
+- **400 Bad Request:** Invalid task ID
+- **401 Unauthorized:** Invalid or missing token
+- **404 Not Found:** Task not found
+- **500 Internal Server Error:** Server error
+
+#### 6. Toggle Task Status
+**Endpoint:** `PATCH /tasks/:id/toggle`
+
+**Description:** Toggles the task status between `PENDING` and `COMPLETED`.
+
+**Example Request:**
+```bash
+curl -X PATCH -H "Authorization: Bearer <access_token>" \
+  http://localhost:3000/tasks/task-uuid/toggle
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Task status toggled successfully",
+  "data": {
+    "id": "uuid",
+    "title": "Complete project",
+    "description": "Finish the task management system",
+    "status": "COMPLETED",
+    "userId": "uuid",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T01:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- **400 Bad Request:** Invalid task ID
+- **401 Unauthorized:** Invalid or missing token
+- **404 Not Found:** Task not found
+- **500 Internal Server Error:** Server error
+
 ### Protected Routes
 
-To access protected routes (future task management endpoints), include the access token in the Authorization header:
+To access protected routes, include the access token in the Authorization header:
 
 ```
 Authorization: Bearer <access_token>
@@ -272,6 +486,22 @@ curl -X POST http://localhost:3000/auth/logout
 - **email:** Valid email format
 - **password:** Required
 
+### Task Creation
+- **title:** Required, 1-200 characters
+- **description:** Optional, max 1000 characters
+- **status:** Optional, either `PENDING` or `COMPLETED` (defaults to `PENDING`)
+
+### Task Update
+- **title:** Optional, 1-200 characters
+- **description:** Optional, max 1000 characters, can be set to null
+- **status:** Optional, either `PENDING` or `COMPLETED`
+
+### Task Query Parameters
+- **page:** Optional, positive integer (default: 1)
+- **limit:** Optional, positive integer (default: 10)
+- **status:** Optional, either `PENDING` or `COMPLETED`
+- **search:** Optional, string for case-insensitive title search
+
 ## Error Handling
 
 The API uses standard HTTP status codes:
@@ -307,23 +537,28 @@ Error responses follow this format:
 ```
 backend/
 ├── prisma/
-│   └── schema.prisma        # Database schema
+│   └── schema.prisma            # Database schema
 ├── src/
 │   ├── controllers/
-│   │   └── authController.ts    # Authentication request handlers
+│   │   ├── authController.ts    # Authentication request handlers
+│   │   └── taskController.ts    # Task request handlers
 │   ├── services/
-│   │   └── authService.ts       # Business logic
+│   │   ├── authService.ts       # Authentication business logic
+│   │   └── taskService.ts       # Task business logic
 │   ├── routes/
-│   │   └── authRoutes.ts        # Route definitions
+│   │   ├── authRoutes.ts        # Authentication route definitions
+│   │   └── taskRoutes.ts        # Task route definitions
 │   ├── middlewares/
 │   │   └── authMiddleware.ts    # Authentication middleware
 │   ├── validators/
-│   │   └── authValidator.ts     # Zod schemas
+│   │   ├── authValidator.ts     # Authentication Zod schemas
+│   │   └── taskValidator.ts     # Task Zod schemas
 │   ├── utils/
-│   │   └── jwt.ts               # JWT utilities
+│   │   ├── jwt.ts               # JWT utilities
+│   │   └── prisma.ts            # Prisma client
 │   ├── app.ts                   # Express app setup
 │   └── server.ts                # Server entry point
-├── .env.example             # Example environment variables
+├── .env.example                 # Example environment variables
 ├── package.json
 └── tsconfig.json
 ```

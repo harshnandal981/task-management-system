@@ -1,6 +1,7 @@
 import express, { Application, Request, Response, NextFunction } from 'express';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
+import taskRoutes from './routes/taskRoutes';
 
 // Load environment variables
 dotenv.config();
@@ -24,6 +25,9 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // Authentication routes
 app.use('/auth', authRoutes);
+
+// Task routes
+app.use('/tasks', taskRoutes);
 
 // Error handling middleware
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
