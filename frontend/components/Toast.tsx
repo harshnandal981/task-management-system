@@ -67,11 +67,13 @@ export function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
 }
 
 // Hook for managing toasts
+let toastIdCounter = 0;
+
 export function useToast() {
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: ToastType }>>([]);
 
   const showToast = (message: string, type: ToastType = "info") => {
-    const id = Date.now();
+    const id = ++toastIdCounter;
     setToasts((prev) => [...prev, { id, message, type }]);
   };
 
